@@ -1,0 +1,83 @@
+# BoxMarket - item barter marketplace untuk BoxPvP
+# Item yang dijual disimpan di escrow plugin (database), bukan hanya "ditandai" di GUI.
+# Item pembayaran dari pembeli disimpan untuk seller dan diambil lewat /bm my (tombol Claim).
+
+storage:
+  # sqlite | mysql
+  type: sqlite
+  mysql:
+    host: localhost
+    port: 3306
+    database: boxmarket
+    username: root
+    password: ""
+    use-ssl: false
+
+# Key PDC untuk item custom yang punya tag identitas. Item ItemEdit/ItemTag biasa TIDAK perlu ini:
+# catalog mencocokkan item persis (nama, lore, flag, enchant, tag) dari item aslinya.
+# Key PersistentDataContainer untuk mengenali item custom BoxPvP.
+# Contoh: item custom punya PDC string "boxpvp:custom_id" = "ember_shard"
+custom-item-key: "boxpvp:custom_id"
+
+market:
+  # Listing yang lewat X jam hilang dari marketplace; item diambil lewat My Listings.
+  # Isi 0 untuk menonaktifkan.
+  listing-expire-hours: 72
+  # Maksimal jumlah item pembayaran dalam satu listing.
+  max-price-amount: 1000000
+  # Item yang dilarang dijual.
+  blacklisted-materials:
+    - BEDROCK
+    - BARRIER
+    - COMMAND_BLOCK
+    - STRUCTURE_BLOCK
+
+# Limit default jika player tidak punya permission limit.
+default-listing-limit: 1
+
+# Item harga barter sekarang diatur di game: /bm catalog (disimpan di catalog.yml).
+# Bagian ini opsional untuk item bawaan; item di sini juga bisa dihapus lewat /bm catalog.
+# custom-id kosong = cocok dengan item yang sama persis dengan item polos tanpa tag.
+payment-items: {}
+#  contoh:
+#  crystal:
+#    material: EMERALD
+#    custom-id: ""
+#    name: "&bCrystal"
+
+messages:
+  prefix: "&8[&bBoxMarket&8] &7"
+  no-permission: "&cKamu tidak punya izin."
+  only-player: "&cHanya player yang dapat menggunakan perintah ini."
+  not-enough-payment: "&cItem pembayaran kamu tidak cukup."
+  limit-reached: "&cLimit listing aktif kamu sudah penuh."
+  listing-created: "&aListing dibuat: &f%item% &7x%amount% &7untuk &f%price% &7x%price_amount%."
+  listing-bought: "&aItem kamu terjual kepada &f%buyer%&a. Ambil hasilnya di &f/bm my&a."
+  purchase-success: "&aBerhasil membeli item."
+  payment-refunded: "&cPembelian gagal, item pembayaran dikembalikan."
+  inventory-full: "&cInventory penuh, sebagian item di-drop di dekatmu."
+  inventory-full-buy: "&cInventory kamu penuh. Kosongkan slot lalu coba lagi, item pembayaran tidak diambil."
+  own-listing: "&cKamu tidak bisa membeli listing milikmu sendiri."
+  listing-cancelled: "&aListing dibatalkan dan item dikembalikan."
+  listing-not-found: "&cListing tidak ditemukan atau sudah tidak aktif."
+  blacklisted-item: "&cItem ini tidak boleh dijual."
+  invalid-item: "&cTaruh minimal satu item di slot jual."
+  choose-price: "&cPilih item pembayaran dulu."
+  reloaded: "&aKonfigurasi direload."
+  usage-cancel: "&cGunakan: /boxmarket cancel <id>"
+  earnings-waiting: "&aKamu punya item menunggu (hasil penjualan/pengembalian). Buka &f/bm my &auntuk mengambil."
+  earnings-claimed: "&aSemua item berhasil diambil."
+  earnings-partial: "&eSebagian item diambil. Kosongkan inventory lalu klik Claim lagi."
+  earnings-empty: "&7Tidak ada item untuk diambil."
+  catalog-added: "&aDitambahkan ke catalog: &f%name% &7(id: %id%)"
+  catalog-exists: "&e%name% &7sudah ada di catalog."
+  catalog-removed: "&aDihapus dari catalog: &f%name%"
+  catalog-in-use: "&cTidak bisa dihapus: masih ada &f%count% &clisting aktif yang memakai item ini sebagai harga."
+  catalog-config: "&cItem ini berasal dari config.yml, hapus lewat file config."
+  catalog-full: "&cCatalog penuh (maksimal 45 item)."
+  catalog-no-item: "&cPegang item di tangan dulu."
+  catalog-not-found: "&cItem catalog tidak ditemukan."
+  usage-catalog: "&cGunakan: /boxmarket catalog [add|remove <id>]"
+  catalog-check-match: "&aItem ini COCOK dengan catalog: &f%name% &7(id: %id%)"
+  catalog-check-diff: "&eMirip &f%id%&e tapi beda: &f%diff%"
+  catalog-check-none: "&cBelum ada item catalog dengan material ini."

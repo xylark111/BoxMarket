@@ -1,0 +1,37 @@
+name: BoxMarket
+version: 1.0.0
+main: id.boxmarket.BoxMarketPlugin
+api-version: '1.20'
+author: BoxMarket
+description: Item-for-item barter marketplace untuk server BoxPvP.
+
+commands:
+  boxmarket:
+    description: Buka BoxMarket
+    aliases: [bm, market]
+    usage: /boxmarket [market|sell|my|catalog|reload|cancel]
+
+permissions:
+  boxmarket.use:
+    description: Buka marketplace
+    default: true
+  boxmarket.sell:
+    description: Boleh membuat listing
+    default: true
+  boxmarket.sell.limit.1:
+    description: Limit 1 listing aktif
+    default: true
+  boxmarket.sell.limit.3:
+    description: Limit 3 listing aktif
+    default: false
+  boxmarket.sell.limit.10:
+    description: Limit 10 listing aktif
+    default: false
+  boxmarket.catalog:
+    description: Kelola catalog item harga barter (/bm catalog)
+    default: op
+  boxmarket.admin:
+    description: Akses admin BoxMarket
+    default: op
+    children:
+      boxmarket.catalog: true
