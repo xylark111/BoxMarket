@@ -107,6 +107,13 @@ public class BoxMarketCommand implements CommandExecutor, TabCompleter {
         switch (sub) {
             case "sell" -> guiManager.openSellMenu(player);
             case "my" -> guiManager.openMyListings(player);
+            case "limit" -> {
+                ListingManager.LimitInfo info = listingManager.resolveLimit(player);
+                plugin.send(player, "limit-info",
+                        "%current%", String.valueOf(listingManager.countActiveListings(player.getUniqueId())),
+                        "%limit%", listingManager.limitText(info.limit()),
+                        "%source%", info.source());
+            }
             default -> guiManager.openMarket(player, 0);
         }
 
@@ -118,7 +125,7 @@ public class BoxMarketCommand implements CommandExecutor, TabCompleter {
         boolean admin = sender.hasPermission("boxmarket.admin");
 
         if (args.length == 1) {
-            List<String> options = new ArrayList<>(List.of("market", "sell", "my"));
+            List<String> options = new ArrayList<>(List.of("market", "sell", "my", "limit"));
             if (admin) {
                 options.add("reload");
                 options.add("cancel");

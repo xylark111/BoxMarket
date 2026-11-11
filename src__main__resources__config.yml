@@ -32,8 +32,18 @@ market:
     - COMMAND_BLOCK
     - STRUCTURE_BLOCK
 
-# Limit default jika player tidak punya permission limit.
-default-listing-limit: 1
+# Limit listing AKTIF per rank, mirip sethome-multiple di Essentials.
+# Nama rank = nama group LuckPerms (otomatis lewat permission group.<nama>)
+# ATAU permission boxmarket.limit.<nama> (mis. boxmarket.limit.vip).
+# Player memakai limit TERTINGGI yang dia punya. Isi -1 untuk tanpa batas.
+# Selain itu tetap bisa pakai permission angka: boxmarket.sell.limit.<angka> (1 sampai 100),
+# dan boxmarket.limit.unlimited untuk tanpa batas.
+listing-limits:
+  default: 1
+  vip: 3
+  mvp: 5
+# true = nama rank di atas dicocokkan juga dengan group LuckPerms, tanpa perlu menambah permission.
+listing-limits-use-groups: true
 
 # Item harga barter sekarang diatur di game: /bm catalog (disimpan di catalog.yml).
 # Bagian ini opsional untuk item bawaan; item di sini juga bisa dihapus lewat /bm catalog.
@@ -50,7 +60,7 @@ messages:
   no-permission: "&cKamu tidak punya izin."
   only-player: "&cHanya player yang dapat menggunakan perintah ini."
   not-enough-payment: "&cItem pembayaran kamu tidak cukup."
-  limit-reached: "&cLimit listing aktif kamu sudah penuh."
+  limit-reached: "&cLimit listing aktif kamu sudah penuh (&f%current%&c/&f%limit%&c)."
   listing-created: "&aListing dibuat: &f%item% &7x%amount% &7untuk &f%price% &7x%price_amount%."
   listing-bought: "&aItem kamu terjual kepada &f%buyer%&a. Ambil hasilnya di &f/bm my&a."
   purchase-success: "&aBerhasil membeli item."
@@ -81,3 +91,4 @@ messages:
   catalog-check-match: "&aItem ini COCOK dengan catalog: &f%name% &7(id: %id%)"
   catalog-check-diff: "&eMirip &f%id%&e tapi beda: &f%diff%"
   catalog-check-none: "&cBelum ada item catalog dengan material ini."
+  limit-info: "&7Listing aktif kamu: &f%current%&7/&f%limit% &8(dari: %source%)"

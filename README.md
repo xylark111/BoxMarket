@@ -20,6 +20,7 @@ Tanpa install apa pun: upload folder ini ke repository GitHub, buka tab **Action
 | `/bm` | Buka marketplace |
 | `/bm sell` | Menu jual: taruh item, Save, pilih item pembayaran, atur jumlah, Save |
 | `/bm my` | Listing milikmu (klik untuk ambil kembali) + tombol Claim hasil penjualan |
+| `/bm limit` | Lihat jumlah listing aktif dan limit kamu (beserta asal limitnya) |
 | `/bm reload` | Reload config (admin) |
 | `/bm cancel <id>` | Batalkan listing (admin, ID tampil di lore listing) |
 
@@ -58,3 +59,18 @@ langsung dari game, tanpa edit config:
 
 Lore listing menampilkan "Sisa waktu" (hijau > 1 hari, kuning > 1 jam, merah di bawahnya) dan diperbarui otomatis
 tiap 20 detik selama menu terbuka. Atur batasnya di `market.listing-expire-hours` (0 = tanpa batas).
+
+## Limit listing per rank
+
+Atur di `listing-limits` (config.yml), mirip `sethome-multiple` Essentials:
+
+    listing-limits:
+      default: 1
+      vip: 3
+      mvp: 5
+
+- Nama rank cocok dengan **group LuckPerms** (otomatis), atau permission `boxmarket.limit.<nama>`.
+- Player memakai limit **tertinggi** yang dia punya. `-1` = tanpa batas.
+- Permission angka tetap bisa: `boxmarket.sell.limit.<angka>` (1-100). `boxmarket.limit.unlimited` = tanpa batas.
+- Matikan pencocokan group LuckPerms dengan `listing-limits-use-groups: false`.
+- Cek hasilnya dengan `/bm limit`.

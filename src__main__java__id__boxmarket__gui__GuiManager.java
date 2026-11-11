@@ -2,6 +2,7 @@ package id.boxmarket.gui;
 
 import id.boxmarket.BoxMarketPlugin;
 import id.boxmarket.Listing;
+import id.boxmarket.item.ItemMatcher;
 import id.boxmarket.item.PaymentItem;
 import id.boxmarket.manager.CatalogManager;
 import id.boxmarket.manager.ListingManager;
@@ -39,7 +40,8 @@ public class GuiManager implements Listener {
         PRICE,
         AMOUNT,
         MY_LISTINGS,
-        CATALOG
+        CATALOG,
+        CONFIRM
     }
 
     public static final class MenuHolder implements InventoryHolder {
@@ -132,10 +134,16 @@ public class GuiManager implements Listener {
             inventory.setItem(45, button(Material.ARROW, "&7Previous Page"));
         }
         inventory.setItem(47, button(Material.BOOK, "&eMy Listings"));
-        inventory.setItem(49, button(Material.CHEST, "&eSell Item"));
+        inventory.setItem(49, button(Material.CHEST, "&eSell Item",
+                "&7Listing aktif: &f" + listingManager.countActiveListings(player.getUniqueId())
+                        + "&7/&f" + listingManager.limitText(listingManager.getListingLimit(player))));
         if (page < pages - 1) {
             inventory.setItem(53, button(Material.ARROW, "&7Next Page"));
         }
+
+        inventory.setItem(51, button(Material.PAPER, "&7Halaman &f" + (page + 1) + "&7/&f" + pages,
+                "&7Total listing: &f" + listings.size()));
+        fillEmpty(inventory, 45, 54, Material.BLACK_STAINED_GLASS_PANE);
 
         open(player, inventory);
     }
@@ -152,7 +160,7 @@ public class GuiManager implements Listener {
         SellSession previous = sessions.get(uuid);
 
         if (previous == null && !listingManager.canCreateListing(player)) {
-            plugin.send(player, "limit-reached");
+            notifyLimit(player);
             return;
         }
 
@@ -214,6 +222,8 @@ public class GuiManager implements Listener {
         inventory.setItem(49, button(Material.ARROW, "&7Back"));
         inventory.setItem(53, button(Material.LIME_DYE, "&aSave"));
 
+        fillEmpty(inventory, 0, 54, Material.GRAY_STAINED_GLASS_PANE);
+
         open(player, inventory);
     }
 
@@ -246,6 +256,10 @@ public class GuiManager implements Listener {
         inventory.setItem(49, button(Material.ARROW, "&7Back"));
         inventory.setItem(53, button(Material.LIME_DYE, "&aSave"));
 
+        // Pratinjau item yang sedang dijual, supaya jelas apa yang sedang diberi harga.
+        inventory.setItem(4, createSellPreview(session));
+        fillEmpty(inventory, 0, 54, Material.GRAY_STAINED_GLASS_PANE);
+
         open(player, inventory);
     }
 
@@ -263,9 +277,14 @@ public class GuiManager implements Listener {
         }
 
         inventory.setItem(49, button(Material.ARROW, "&7Back"));
+        inventory.setItem(47, button(Material.PAPER, "&7Listing aktif",
+                "&7Terpakai: &f" + listings.size()
+                        + "&7/&f" + listingManager.limitText(listingManager.getListingLimit(player))));
         inventory.setItem(53, button(Material.ENDER_CHEST, "&aClaim Item",
                 "&7Hasil penjualan / pengembalian.",
                 "&7Stack menunggu: &f" + listingManager.countEarningStacks(player.getUniqueId())));
+
+        fillEmpty(inventory, 45, 54, Material.BLACK_STAINED_GLASS_PANE);
 
         open(player, inventory);
     }
@@ -312,6 +331,7 @@ public class GuiManager implements Listener {
             case MARKET -> handleMarketClick(player, menu, raw);
             case PRICE -> handlePriceClick(player, menu, raw);
             case CATALOG -> handleCatalogClick(player, menu, raw);
+            case CONFIRM -> handleConfirmClick(player, menu, raw);
             case AMOUNT -> handleAmountClick(player, top, raw);
             case MY_LISTINGS -> handleMyListingsClick(player, menu, raw);
             default -> {
@@ -426,7 +446,7 @@ public class GuiManager implements Listener {
         }
 
         if (!listingManager.canCreateListing(player)) {
-            plugin.send(player, "limit-reached");
+            notifyLimit(player);
             return;
         }
 
@@ -486,7 +506,31 @@ public class GuiManager implements Listener {
 
         if (slot >= PAGE_SIZE || slot >= menu.ids().size()) return;
 
-        ListingManager.BuyResult result = listingManager.buy(player, menu.ids().get(slot));
+        Listing listing = listingManager.getListing(menu.ids().get(slot));
+
+        if (listing == null || listingManager.isExpired(listing)) {
+            plugin.send(player, "listing-not-found");
+            openMarket(player, menu.page());
+            return;
+        }
+
+        if (listing.getSeller().equals(player.getUniqueId())) {
+            plugin.send(player, "own-listing");
+            return;
+        }
+
+        openConfirmMenu(player, listing, menu.page());
+    }
+
+    private void handleConfirmClick(Player player, MenuHolder menu, int slot) {
+        if (slot == 47) {
+            openMarket(player, menu.page());
+            return;
+        }
+
+        if (slot != 51 || menu.ids().isEmpty()) return;
+
+        ListingManager.BuyResult result = listingManager.buy(player, menu.ids().get(0));
 
         switch (result) {
             case SUCCESS -> plugin.send(player, "purchase-success");
@@ -629,7 +673,11 @@ public class GuiManager implements Listener {
         }
 
         if (!player.hasPermission("boxmarket.sell") || !listingManager.canCreateListing(player)) {
-            plugin.send(player, player.hasPermission("boxmarket.sell") ? "limit-reached" : "no-permission");
+            if (player.hasPermission("boxmarket.sell")) {
+                notifyLimit(player);
+            } else {
+                plugin.send(player, "no-permission");
+            }
             releaseSession(player);
             openMarket(player, 0);
             return;
@@ -647,6 +695,44 @@ public class GuiManager implements Listener {
                 "%price_amount%", String.valueOf(listing.getPriceAmount()));
 
         openMarket(player, 0);
+    }
+
+    // ---------------------------------------------------------------- konfirmasi beli
+
+    public void openConfirmMenu(Player player, Listing listing, int marketPage) {
+        MenuHolder holder = new MenuHolder(MenuType.CONFIRM, marketPage);
+        holder.ids().add(listing.getId());
+
+        Inventory inventory = Bukkit.createInventory(holder, 54, color("&8Konfirmasi Pembelian"));
+        holder.setInventory(inventory);
+
+        for (int slot = 0; slot < 54; slot++) {
+            inventory.setItem(slot, button(Material.GRAY_STAINED_GLASS_PANE, " "));
+        }
+
+        // Item yang akan didapat (tanpa lore tambahan, persis seperti yang diterima).
+        List<ItemStack> items = listing.getItems();
+        for (int i = 0; i < items.size() && i < 27; i++) {
+            inventory.setItem(i, items.get(i).clone());
+        }
+
+        PaymentItem payment = listing.getPrice();
+        int required = listing.getPriceAmount();
+        int have = ItemMatcher.count(player, payment, plugin.getCustomItemKey());
+
+        ItemStack price = paymentIcon(payment, "&fHarga: " + payment.displayName() + " &7x" + required,
+                "&7Kamu punya: " + (have >= required ? "&a" : "&c") + have);
+        price.setAmount(Math.max(1, Math.min(required, price.getMaxStackSize())));
+        inventory.setItem(31, price);
+
+        // Tombol di baris bawah (slot 45+) agar klik ganda di slot listing tidak langsung membeli.
+        inventory.setItem(47, button(Material.RED_CONCRETE, "&cBatal", "&7Kembali ke marketplace."));
+        inventory.setItem(51, button(Material.LIME_CONCRETE, "&aKonfirmasi Beli",
+                "&7Seller: &f" + listing.getSellerName(),
+                "&7Item: &f" + totalItems(items) + " item",
+                "&7Harga: &f" + payment.displayName() + " &7x" + required));
+
+        open(player, inventory);
     }
 
     // ---------------------------------------------------------------- catalog (admin)
@@ -690,6 +776,8 @@ public class GuiManager implements Listener {
         }
 
         inventory.setItem(49, button(Material.BARRIER, "&cTutup"));
+
+        fillEmpty(inventory, 45, 54, Material.BLACK_STAINED_GLASS_PANE);
 
         open(player, inventory);
     }
@@ -796,6 +884,44 @@ public class GuiManager implements Listener {
         return "&ckurang dari 1 menit";
     }
 
+    /** Isi slot yang masih kosong dengan panel kaca polos agar tidak tampak seperti tempat menaruh item. */
+    private void fillEmpty(Inventory inventory, int from, int to, Material pane) {
+        ItemStack filler = button(pane, " ");
+
+        for (int slot = from; slot < to && slot < inventory.getSize(); slot++) {
+            if (inventory.getItem(slot) == null) {
+                inventory.setItem(slot, filler.clone());
+            }
+        }
+    }
+
+    private ItemStack createSellPreview(SellSession session) {
+        ItemStack preview = session.items.get(0).clone();
+        ItemMeta meta = preview.getItemMeta();
+
+        if (meta != null) {
+            List<Component> existing = meta.lore();
+            List<Component> lore = existing == null ? new ArrayList<>() : new ArrayList<>(existing);
+
+            lore.add(Component.empty());
+            lore.add(color("&7Kamu menjual: &f" + totalItems(session.items) + " item"));
+            if (session.items.size() > 1) {
+                lore.add(color("&7(" + session.items.size() + " stack)"));
+            }
+
+            meta.lore(lore);
+            preview.setItemMeta(meta);
+        }
+
+        return preview;
+    }
+
+    private void notifyLimit(Player player) {
+        plugin.send(player, "limit-reached",
+                "%current%", String.valueOf(listingManager.countActiveListings(player.getUniqueId())),
+                "%limit%", listingManager.limitText(listingManager.getListingLimit(player)));
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private void releaseSession(Player player) {
@@ -878,8 +1004,10 @@ public class GuiManager implements Listener {
     private ItemStack createAmountIcon(SellSession session) {
         PaymentItem payment = session.price;
 
-        return paymentIcon(payment, payment.displayName() + " &7x" + session.amount,
+        ItemStack icon = paymentIcon(payment, payment.displayName() + " &7x" + session.amount,
                 "&8Klik tombol untuk mengubah jumlah.", "&8Lalu tekan Save.");
+        icon.setAmount(Math.max(1, Math.min(session.amount, icon.getMaxStackSize())));
+        return icon;
     }
 
     private ItemStack button(Material material, String name, String... lore) {

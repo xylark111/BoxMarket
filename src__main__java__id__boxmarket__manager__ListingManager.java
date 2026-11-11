@@ -7,6 +7,7 @@ import id.boxmarket.db.Database;
 import id.boxmarket.item.ItemMatcher;
 import id.boxmarket.item.PaymentItem;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -14,12 +15,18 @@ import org.bukkit.inventory.PlayerInventory;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ListingManager {
+
+    public static final int UNLIMITED = Integer.MAX_VALUE;
+
+    public record LimitInfo(int limit, String source) {
+    }
 
     public enum BuyResult {
         SUCCESS,
@@ -64,15 +71,64 @@ public class ListingManager {
     }
 
     public int getListingLimit(Player player) {
-        int limit = plugin.getConfig().getInt("default-listing-limit", 1);
+        return resolveLimit(player).limit();
+    }
 
-        for (int value = 1; value <= 100; value++) {
-            if (player.hasPermission("boxmarket.sell.limit." + value)) {
-                limit = Math.max(limit, value);
+    private static int normalize(int value) {
+        return value < 0 ? UNLIMITED : value;
+    }
+
+    public String limitText(int limit) {
+        return limit == UNLIMITED ? "tanpa batas" : String.valueOf(limit);
+    }
+
+    /**
+     * Limit listing aktif = nilai TERTINGGI dari:
+     * - listing-limits.default
+     * - tiap rank di listing-limits yang dimiliki player (permission boxmarket.limit.NAMA,
+     *   atau group LuckPerms bernama NAMA jika listing-limits-use-groups: true)
+     * - permission angka boxmarket.sell.limit.N
+     * boxmarket.limit.unlimited = tanpa batas.
+     */
+    public LimitInfo resolveLimit(Player player) {
+        if (player.hasPermission("boxmarket.limit.unlimited")) {
+            return new LimitInfo(UNLIMITED, "unlimited");
+        }
+
+        ConfigurationSection limits = plugin.getConfig().getConfigurationSection("listing-limits");
+
+        int best = limits != null && limits.contains("default")
+                ? normalize(limits.getInt("default"))
+                : normalize(plugin.getConfig().getInt("default-listing-limit", 1));
+        String source = "default";
+
+        boolean useGroups = plugin.getConfig().getBoolean("listing-limits-use-groups", true);
+
+        if (limits != null) {
+            for (String name : limits.getKeys(false)) {
+                if (name.equalsIgnoreCase("default")) continue;
+
+                String key = name.toLowerCase(Locale.ROOT);
+                boolean has = player.hasPermission("boxmarket.limit." + key)
+                        || (useGroups && player.hasPermission("group." + key));
+                if (!has) continue;
+
+                int value = normalize(limits.getInt(name));
+                if (value > best) {
+                    best = value;
+                    source = name;
+                }
             }
         }
 
-        return limit;
+        for (int value = 1; value <= 100; value++) {
+            if (value > best && player.hasPermission("boxmarket.sell.limit." + value)) {
+                best = value;
+                source = "boxmarket.sell.limit." + value;
+            }
+        }
+
+        return new LimitInfo(best, source);
     }
 
     public boolean canCreateListing(Player player) {

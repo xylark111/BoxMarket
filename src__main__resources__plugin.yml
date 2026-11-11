@@ -9,7 +9,7 @@ commands:
   boxmarket:
     description: Buka BoxMarket
     aliases: [bm, market]
-    usage: /boxmarket [market|sell|my|catalog|reload|cancel]
+    usage: /boxmarket [market|sell|my|limit|catalog|reload|cancel]
 
 permissions:
   boxmarket.use:
@@ -27,6 +27,9 @@ permissions:
   boxmarket.sell.limit.10:
     description: Limit 10 listing aktif
     default: false
+  boxmarket.limit.unlimited:
+    description: Tanpa batas jumlah listing aktif
+    default: op
   boxmarket.catalog:
     description: Kelola catalog item harga barter (/bm catalog)
     default: op
