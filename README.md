@@ -74,3 +74,9 @@ Atur di `listing-limits` (config.yml), mirip `sethome-multiple` Essentials:
 - Permission angka tetap bisa: `boxmarket.sell.limit.<angka>` (1-100). `boxmarket.limit.unlimited` = tanpa batas.
 - Matikan pencocokan group LuckPerms dengan `listing-limits-use-groups: false`.
 - Cek hasilnya dengan `/bm limit`.
+
+## Suara
+
+Klik tombol, ganti halaman, +/- jumlah, konfirmasi, beli, jual, claim, error, dan notifikasi barang terjual
+punya suara sendiri. Semua bisa diubah atau dimatikan di bagian `sounds` pada config.yml
+(format: `nama.suara.minecraft, volume, pitch`). `enabled: false` mematikan semuanya.

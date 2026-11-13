@@ -55,6 +55,29 @@ payment-items: {}
 #    custom-id: ""
 #    name: "&bCrystal"
 
+# Suara GUI. Format: "nama.suara.minecraft, volume, pitch" (pitch 0.5-2.0).
+# Kosongkan atau isi "none" untuk mematikan satu suara. enabled: false mematikan semuanya.
+# Contoh nama: ui.button.click, entity.player.levelup, block.note_block.pling
+# Suara purchase, sell, sold, claim, error, notify, catalog-add dan catalog-remove otomatis
+# ikut dimainkan saat pesan terkait dikirim ke player.
+sounds:
+  enabled: true
+  click: "ui.button.click, 0.6, 1.3"
+  page: "item.book.page_turn, 0.8, 1.0"
+  open: "block.ender_chest.open, 0.4, 1.5"
+  select: "entity.experience_orb.pickup, 0.5, 1.6"
+  amount-up: "block.note_block.hat, 0.7, 1.6"
+  amount-down: "block.note_block.hat, 0.7, 0.9"
+  confirm: "block.amethyst_block.chime, 0.9, 1.2"
+  purchase: "entity.player.levelup, 0.7, 1.3"
+  sell: "entity.villager.yes, 0.8, 1.1"
+  sold: "entity.experience_orb.pickup, 0.8, 1.0"
+  claim: "entity.item.pickup, 0.8, 1.0"
+  error: "entity.villager.no, 0.7, 1.0"
+  catalog-add: "block.note_block.pling, 0.8, 1.6"
+  catalog-remove: "block.note_block.bass, 0.8, 0.8"
+  notify: "block.note_block.chime, 0.8, 1.4"
+
 messages:
   prefix: "&8[&bBoxMarket&8] &7"
   no-permission: "&cKamu tidak punya izin."

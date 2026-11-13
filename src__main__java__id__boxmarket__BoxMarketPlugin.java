@@ -6,6 +6,7 @@ import id.boxmarket.gui.GuiManager;
 import id.boxmarket.item.PaymentItem;
 import id.boxmarket.manager.CatalogManager;
 import id.boxmarket.manager.ListingManager;
+import id.boxmarket.manager.SoundManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -33,6 +34,7 @@ public final class BoxMarketPlugin extends JavaPlugin {
     private ListingManager listingManager;
     private GuiManager guiManager;
     private CatalogManager catalogManager;
+    private SoundManager soundManager;
     private NamespacedKey customItemKey;
     private final Map<String, PaymentItem> paymentItems = new LinkedHashMap<>();
 
@@ -43,6 +45,9 @@ public final class BoxMarketPlugin extends JavaPlugin {
         this.customItemKey = readCustomKey();
         this.catalogManager = new CatalogManager(this);
         loadPaymentItems();
+
+        this.soundManager = new SoundManager(this);
+        this.soundManager.reload();
 
         this.database = new Database(this);
         try {
@@ -133,6 +138,11 @@ public final class BoxMarketPlugin extends JavaPlugin {
         reloadConfig();
         this.customItemKey = readCustomKey();
         loadPaymentItems();
+        soundManager.reload();
+    }
+
+    public SoundManager getSoundManager() {
+        return soundManager;
     }
 
     public CatalogManager getCatalogManager() {
@@ -166,6 +176,10 @@ public final class BoxMarketPlugin extends JavaPlugin {
             text = text.replace(replacements[i], replacements[i + 1]);
         }
         to.sendMessage(color(text));
+
+        if (to instanceof Player player && soundManager != null) {
+            soundManager.playForMessage(player, key);
+        }
     }
 
     /** Beri item ke player; yang tidak muat di-drop agar tidak hilang. */

@@ -89,6 +89,7 @@ public class BoxMarketCommand implements CommandExecutor, TabCompleter {
             } else if (action.equals("check")) {
                 catalog.check(admin, admin.getInventory().getItemInMainHand());
             } else {
+                plugin.getSoundManager().play(admin, "open");
                 guiManager.openCatalog(admin, null);
             }
             return true;
@@ -102,6 +103,10 @@ public class BoxMarketCommand implements CommandExecutor, TabCompleter {
         if (!player.hasPermission("boxmarket.use")) {
             plugin.send(player, "no-permission");
             return true;
+        }
+
+        if (!sub.equals("limit")) {
+            plugin.getSoundManager().play(player, "open");
         }
 
         switch (sub) {

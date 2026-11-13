@@ -7,6 +7,7 @@ import id.boxmarket.item.PaymentItem;
 import id.boxmarket.manager.CatalogManager;
 import id.boxmarket.manager.ListingManager;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -319,6 +320,11 @@ public class GuiManager implements Listener {
         // Semua menu lain: tidak ada item yang boleh dipindah.
         event.setCancelled(true);
 
+        if (inTop && !isFiller(event.getCurrentItem())
+                && !(menu.type() == MenuType.AMOUNT && raw >= 10 && raw <= 16)) {
+            sound(player, "click");
+        }
+
         if (!inTop) {
             // Di menu catalog, klik item di inventory sendiri = tambah ke catalog.
             if (menu.type() == MenuType.CATALOG) {
@@ -428,6 +434,10 @@ public class GuiManager implements Listener {
 
         event.setCancelled(true);
 
+        if (!isFiller(event.getCurrentItem())) {
+            sound(player, "click");
+        }
+
         switch (raw) {
             case 45, 49 -> {
                 returnSellSlotItems(player, top);
@@ -485,7 +495,10 @@ public class GuiManager implements Listener {
 
     private void handleMarketClick(Player player, MenuHolder menu, int slot) {
         if (slot == 45) {
-            if (menu.page() > 0) openMarket(player, menu.page() - 1);
+            if (menu.page() > 0) {
+                sound(player, "page");
+                openMarket(player, menu.page() - 1);
+            }
             return;
         }
 
@@ -500,6 +513,7 @@ public class GuiManager implements Listener {
         }
 
         if (slot == 53) {
+            sound(player, "page");
             openMarket(player, menu.page() + 1);
             return;
         }
@@ -519,6 +533,7 @@ public class GuiManager implements Listener {
             return;
         }
 
+        sound(player, "confirm");
         openConfirmMenu(player, listing, menu.page());
     }
 
@@ -581,6 +596,7 @@ public class GuiManager implements Listener {
 
         session.price = payment;
         session.amount = 1;
+        sound(player, "select");
 
         openAmountMenu(player);
     }
@@ -621,8 +637,10 @@ public class GuiManager implements Listener {
         };
 
         if (delta != 0) {
+            int before = session.amount;
             session.amount = Math.max(1, Math.min(max, session.amount + delta));
             top.setItem(13, createAmountIcon(session));
+            sound(player, session.amount == before ? "error" : (delta > 0 ? "amount-up" : "amount-down"));
         }
     }
 
@@ -920,6 +938,22 @@ public class GuiManager implements Listener {
         plugin.send(player, "limit-reached",
                 "%current%", String.valueOf(listingManager.countActiveListings(player.getUniqueId())),
                 "%limit%", listingManager.limitText(listingManager.getListingLimit(player)));
+    }
+
+    private void sound(Player player, String cue) {
+        plugin.getSoundManager().play(player, cue);
+    }
+
+    /** Panel kaca polos (pengisi) tidak memicu suara klik. */
+    private boolean isFiller(ItemStack item) {
+        if (item == null || item.getType().isAir()) return true;
+        if (!item.getType().name().endsWith("_STAINED_GLASS_PANE")) return false;
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null || !meta.hasDisplayName()) return true;
+
+        Component name = meta.displayName();
+        return name == null || LegacyComponentSerializer.legacyAmpersand().serialize(name).isBlank();
     }
 
     // ---------------------------------------------------------------- helpers
